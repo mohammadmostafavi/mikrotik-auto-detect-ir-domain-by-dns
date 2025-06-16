@@ -1,0 +1,18 @@
+:global exitingIps;
+:foreach i in=[/ip firewall address-list find where list="ir-domains"] do={
+	:local exitingIp [/ip firewall address-list get $i address];
+	:if ([:typeof [:find $exitingIps $exitingIp]] != "nothing") do={
+		:if ([:typeof $exitingIps] = "nothing") do={
+			:set exitingIps $exitingIp;
+		} else={
+			:set exitingIps ($exitingIps . "," . $exitingIp);
+		}
+	}
+}
+:foreach i in=[/ip dns cache all find] do={
+	:local name [/ip dns cache all get $i name];
+	:local address [:toip [/ip dns cache all get $i data]];
+	if ([:typeof $address] = "ip" && [:typeof [:find $name ".ir"]] = "num" && [:typeof [:find $exitingIps $address]] != "num") do={
+		/ip firewall address-list add list=ir-domains address=$address;
+  	}
+}
